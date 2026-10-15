@@ -16,6 +16,7 @@ CATEGORY_EMOJIS = {
     "ap": "📶 Access Point",
     "cctv": "📹 CCTV",
     "pc": "💻 PC / Komputer",
+    "phone": "📱 HP / Tablet",
     "server": "🖥️ Server",
     "printer": "🖨️ Printer",
     "other": "🔌 Perangkat"
@@ -154,7 +155,12 @@ class NetworkMonitorEngine:
 
         settings = get_settings()
         fail_threshold = int(settings.get("fail_threshold", 2))
+        # If it's a mobile/battery device (phone/tablet), apply extra sleep tolerance to avoid sleep flapping
+        if category == "phone":
+            fail_threshold = max(fail_threshold * 2, 4)
+
         telegram_enabled = settings.get("telegram_enabled", "1") == "1"
+        dev_alert_enabled = dev.get("alert_enabled", 1) == 1
         bot_token = settings.get("telegram_bot_token", "")
         chat_id = settings.get("telegram_chat_id", "")
 
@@ -189,7 +195,7 @@ class NetworkMonitorEngine:
                     msg_log = f"Device pulih kembali. Latensi: {latency:.1f}ms. Downtime: {downtime_text or '-'}"
                     log_incident(dev_id, name, ip, category, "RECOVERED", msg_log)
 
-                    if telegram_enabled and bot_token and chat_id:
+                    if telegram_enabled and dev_alert_enabled and bot_token and chat_id:
                         tg_msg = (
                             f"✅ <b>DEVICE RECOVERED / UP!</b>\n"
                             f"━━━━━━━━━━━━━━━━━━━\n"
@@ -230,7 +236,7 @@ class NetworkMonitorEngine:
                         msg_log = f"Device DOWN: {reason} (Gagal {new_fails}x)"
                         log_incident(dev_id, name, ip, category, "DOWN", msg_log)
 
-                        if telegram_enabled and bot_token and chat_id:
+                        if telegram_enabled and dev_alert_enabled and bot_token and chat_id:
                             tg_msg = (
                                 f"🚨 <b>ALERT: DEVICE DOWN / KABEL PUTUS!</b>\n"
                                 f"━━━━━━━━━━━━━━━━━━━\n"

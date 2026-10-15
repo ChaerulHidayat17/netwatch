@@ -28,9 +28,16 @@ def init_db():
                 consecutive_fails INTEGER DEFAULT 0,
                 down_since TEXT,
                 enabled INTEGER DEFAULT 1,
+                alert_enabled INTEGER DEFAULT 1,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        
+        # Ensure alert_enabled column exists for existing DBs
+        cursor.execute("PRAGMA table_info(devices)")
+        cols = [col["name"] for col in cursor.fetchall()]
+        if "alert_enabled" not in cols:
+            cursor.execute("ALTER TABLE devices ADD COLUMN alert_enabled INTEGER DEFAULT 1")
         
         # Settings table
         cursor.execute("""

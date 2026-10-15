@@ -40,6 +40,7 @@ class DeviceCreate(BaseModel):
     ip: str = Field(..., min_length=1, max_length=100)
     category: str = Field("other")
     location: Optional[str] = ""
+    alert_enabled: Optional[int] = 1
 
 class DeviceUpdate(BaseModel):
     name: Optional[str] = None
@@ -47,6 +48,7 @@ class DeviceUpdate(BaseModel):
     category: Optional[str] = None
     location: Optional[str] = None
     enabled: Optional[int] = None
+    alert_enabled: Optional[int] = None
 
 class SettingsUpdate(BaseModel):
     telegram_bot_token: Optional[str] = None
@@ -110,10 +112,11 @@ def add_device(dev: DeviceCreate):
         if cur.fetchone():
             raise HTTPException(status_code=400, detail=f"IP {ip_clean} sudah terdaftar!")
 
+        alert_val = int(dev.alert_enabled) if dev.alert_enabled is not None else (0 if category == "phone" else 1)
         cur.execute("""
-            INSERT INTO devices (name, ip, category, location, status, consecutive_fails)
-            VALUES (?, ?, ?, ?, 'UNKNOWN', 0)
-        """, (name_clean, ip_clean, category, dev.location.strip()))
+            INSERT INTO devices (name, ip, category, location, status, consecutive_fails, alert_enabled)
+            VALUES (?, ?, ?, ?, 'UNKNOWN', 0, ?)
+        """, (name_clean, ip_clean, category, dev.location.strip(), alert_val))
         conn.commit()
         new_id = cur.lastrowid
 
@@ -158,6 +161,9 @@ def update_device(device_id: int, dev: DeviceUpdate):
         if dev.enabled is not None:
             updates.append("enabled = ?")
             params.append(int(dev.enabled))
+        if dev.alert_enabled is not None:
+            updates.append("alert_enabled = ?")
+            params.append(int(dev.alert_enabled))
 
         if updates:
             params.append(device_id)
