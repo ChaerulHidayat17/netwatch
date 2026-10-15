@@ -1,0 +1,20 @@
+# Database & Local Storage
+*.db
+*.sqlite
+*.sqlite3
+netmonitor.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env
+venv/
+env/
+
+# OS & Editor
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
